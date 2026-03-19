@@ -84,31 +84,40 @@ struct GenericHabitView: View {
             Image(systemName: habit.symbolName)
                 .font(.system(size: 18, weight: .semibold))
             
-            // Middle: value and name
+            // Middle: state-dependent information
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(value)")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                Text("\(streak)d streak")
-                    .font(.caption)
-                    .lineLimit(1)
+                if isDone {
+                    Text("\(value)")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: starSize(for: streak), weight: .bold))
+                    Text("\(streak)")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                }
+                .lineLimit(1)
             }
             
             Spacer(minLength: 0)
             
             // Right: big failed / success symbol
             Image(systemName: isDone ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .font(.system(size: 22, weight: .bold))
+                .font(.system(size: isDone ? 28 : 30, weight: .black))
         }
         .padding(.horizontal, 4)
         .containerBackground(for: .widget) { Color.clear }
     }
 
-    private func subtitle(for habit: Habit) -> String {
-        switch habit.kind {
-        case .boolean:
-            return "donzey" // special label so you can see it's using today's state
-        case .count(let max):
-            return "of \(max)"
+    private func starSize(for streak: Int) -> CGFloat {
+        switch streak {
+        case ..<6:
+            return 10
+        case ..<16:
+            return 14
+        default:
+            return 18
         }
     }
 }
