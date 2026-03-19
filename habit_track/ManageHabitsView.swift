@@ -19,6 +19,10 @@ struct ManageHabitsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        Spacer()
+                        Text("\(viewModel.streak(for: habit))d")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .onDelete { indexSet in

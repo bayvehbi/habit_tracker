@@ -5,28 +5,14 @@ struct AddTodayView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: HabitViewModel
 
-    @State private var values: [UUID: Int]
-
-    init(viewModel: HabitViewModel) {
-        self.viewModel = viewModel
-        _values = State(initialValue:
-            Dictionary(uniqueKeysWithValues:
-                viewModel.habits.map { ($0.id, viewModel.value(for: $0)) }
-            )
-        )
-    }
+    @State private var inputValues: [UUID: Int] = [:]
 
     var body: some View {
         NavigationStack {
             Form {
                 ForEach(viewModel.habits) { habit in
                     Section(habit.name) {
-                        switch habit.kind {
-                        case .boolean:
-                            Toggle("Done today", isOn: bindingForBoolean(habit: habit))
-                        case .count(let max):
-                            countEditor(for: habit, max: max)
-                        }
+                        logEditor(for: habit)
                     }
                 }
             }
@@ -37,47 +23,53 @@ struct AddTodayView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") { saveAll() }
+                    Button("Done") { dismiss() }
                 }
             }
         }
     }
 
-    private func bindingForBoolean(habit: Habit) -> Binding<Bool> {
-        Binding(
-            get: { (values[habit.id] ?? 0) > 0 },
-            set: { values[habit.id] = $0 ? 1 : 0 }
-        )
-    }
-
-    private func bindingForCount(habit: Habit) -> Binding<Int> {
-        Binding(
-            get: { values[habit.id] ?? 0 },
-            set: { values[habit.id] = $0 }
-        )
-    }
-
     @ViewBuilder
-    private func countEditor(for habit: Habit, max: Int) -> some View {
-        let count = bindingForCount(habit: habit)
-
+    private func logEditor(for habit: Habit) -> some View {
+        let todayTotal = viewModel.value(for: habit)
+        let input = Binding(
+            get: { inputValues[habit.id] ?? 1 },
+            set: { inputValues[habit.id] = max(1, $0) }
+        )
+        
         VStack(spacing: 8) {
-            Slider(
-                value: Binding(
-                    get: { Double(count.wrappedValue) },
-                    set: { count.wrappedValue = Int($0.rounded()) }
-                ),
-                in: 0...Double(max)
-            )
-
             HStack {
-                Stepper("Count: \(count.wrappedValue)", value: count, in: 0...max)
+                Text("Today total")
+                Spacer()
+                Text("\(todayTotal)")
+                    .fontWeight(.semibold)
             }
-
-            HStack(spacing: 8) {
-                quickAddButton(label: "+10", amount: 10, value: count, max: max)
-                quickAddButton(label: "+20", amount: 20, value: count, max: max)
-                quickAddButton(label: "+50", amount: 50, value: count, max: max)
+            
+            switch habit.kind {
+            case .boolean:
+                Button {
+                    viewModel.addLog(for: habit, value: 1)
+                    WidgetCenter.shared.reloadAllTimelines()
+                } label: {
+                    Label("Log done now", systemImage: "checkmark.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+            case .count:
+                Stepper("Log amount: \(input.wrappedValue)", value: input, in: 1...10_000)
+                HStack(spacing: 8) {
+                    quickAddButton(label: "+1", amount: 1, value: input)
+                    quickAddButton(label: "+5", amount: 5, value: input)
+                    quickAddButton(label: "+10", amount: 10, value: input)
+                }
+                Button {
+                    viewModel.addLog(for: habit, value: input.wrappedValue)
+                    WidgetCenter.shared.reloadAllTimelines()
+                } label: {
+                    Label("Add log entry", systemImage: "plus.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
             }
         }
     }
@@ -85,23 +77,13 @@ struct AddTodayView: View {
     private func quickAddButton(
         label: String,
         amount: Int,
-        value: Binding<Int>,
-        max: Int
+        value: Binding<Int>
     ) -> some View {
         Button(label) {
-            value.wrappedValue = min(max, value.wrappedValue + amount)
+            value.wrappedValue = max(1, value.wrappedValue + amount)
         }
         .buttonStyle(.bordered)
         .controlSize(.small)
-    }
-
-    private func saveAll() {
-        for habit in viewModel.habits {
-            let v = values[habit.id] ?? 0
-            viewModel.setValue(for: habit, value: v)
-        }
-        WidgetCenter.shared.reloadAllTimelines()
-        dismiss()
     }
 }
 

@@ -77,6 +77,7 @@ struct GenericHabitView: View {
     private func content(for habit: Habit) -> some View {
         let value = entry.state.values[habit.id] ?? 0
         let isDone = value > 0
+        let streak = entry.state.streaksByHabit[habit.id] ?? 0
         
         return HStack(spacing: 8) {
             // Left: habit icon
@@ -87,7 +88,7 @@ struct GenericHabitView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(value)")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                Text(habit.name)
+                Text("\(streak)d streak")
                     .font(.caption)
                     .lineLimit(1)
             }

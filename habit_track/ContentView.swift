@@ -27,25 +27,21 @@ struct ContentView: View {
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         ForEach(viewModel.habits) { habit in
-                            summaryCard(
-                                title: habit.name,
-                                value: "\(viewModel.value(for: habit))",
-                                unit: unitLabel(for: habit),
-                                systemImage: habit.symbolName,
-                                isDone: viewModel.value(for: habit) > 0
-                            )
+                            NavigationLink {
+                                HabitStatsView(viewModel: viewModel, habit: habit)
+                            } label: {
+                                summaryCard(
+                                    title: habit.name,
+                                    value: "\(viewModel.value(for: habit))",
+                                    unit: unitLabel(for: habit),
+                                    systemImage: habit.symbolName,
+                                    isDone: viewModel.value(for: habit) > 0,
+                                    streak: viewModel.streak(for: habit)
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-
-                    VStack(spacing: 8) {
-                        Text("Current streak")
-                            .font(.headline)
-                        Text("\(viewModel.state.streakDays) days")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
 
                     Button {
                         showingAddToday = true
@@ -96,7 +92,8 @@ struct ContentView: View {
         value: String,
         unit: String,
         systemImage: String,
-        isDone: Bool
+        isDone: Bool,
+        streak: Int
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -117,6 +114,10 @@ struct ContentView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+
+            Label("\(streak) day streak", systemImage: "flame.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(streak > 0 ? Color.orange : Color.secondary)
 
             Text(title)
                 .font(.subheadline.weight(.semibold))

@@ -45,6 +45,13 @@ struct Habit: Identifiable, Codable, Equatable {
     var kind: HabitKind
 }
 
+struct HabitLog: Identifiable, Codable, Equatable {
+    var id: UUID
+    var habitID: UUID
+    var value: Int
+    var timestamp: Date
+}
+
 /// Shared keys and helpers for storing habit data between the app and the widget.
 enum HabitStorage {
     static let appGroupID = "group.com.habit-track.habit-track"
@@ -57,17 +64,16 @@ enum HabitStorage {
 
     private enum Keys {
         static let habits = "habits.list"
-        static let todayDate = "habits.todayDate"
         static let todayValues = "habits.todayValues"
-        static let streak = "habits.streak"
-        static let lastSuccessDay = "habits.lastSuccessDay"
+        static let logs = "habits.logs"
+        static let historyByDay = "habits.historyByDay"
     }
 
-    /// A simple value type representing today's state and the current streak.
+    /// Represents today's values and per-habit streaks.
     struct State {
         var habits: [Habit]
         var values: [UUID: Int]
-        var streakDays: Int
+        var streaksByHabit: [UUID: Int]
 
         // Convenience for existing UI & widgets: assume first two habits are push-ups & water.
         var todayPushupsCount: Int {
@@ -91,14 +97,21 @@ enum HabitStorage {
         calendar.startOfDay(for: Date())
     }
 
-    private static func ensureToday() {
-        let today = normalizedToday()
-        if let stored = defaults.object(forKey: Keys.todayDate) as? Date,
-           calendar.isDate(stored, inSameDayAs: today) {
-            return
-        }
-        defaults.set(today, forKey: Keys.todayDate)
-        defaults.set([String: Int](), forKey: Keys.todayValues)
+    private static var dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
+    private static func dayKey(for date: Date) -> String {
+        dayFormatter.string(from: calendar.startOfDay(for: date))
+    }
+
+    private static func date(from dayKey: String) -> Date? {
+        dayFormatter.date(from: dayKey)
     }
 
     // MARK: - Habits list
@@ -131,71 +144,246 @@ enum HabitStorage {
         }
     }
 
-    // MARK: - Today state
+    // MARK: - Logs + migration
+
+    private static func loadLegacyHistoryByDay() -> [String: [String: Int]] {
+        defaults.dictionary(forKey: Keys.historyByDay) as? [String: [String: Int]] ?? [:]
+    }
+
+    private static func loadLogs() -> [HabitLog] {
+        if let data = defaults.data(forKey: Keys.logs),
+           let logs = try? JSONDecoder().decode([HabitLog].self, from: data) {
+            return logs
+        }
+        return []
+    }
+
+    private static func saveLogs(_ logs: [HabitLog]) {
+        if let data = try? JSONEncoder().encode(logs) {
+            defaults.set(data, forKey: Keys.logs)
+        }
+    }
+
+    // Migrates previous day totals into timestamped logs.
+    private static func migrateToLogsIfNeeded() {
+        if defaults.data(forKey: Keys.logs) != nil { return }
+
+        let history = loadLegacyHistoryByDay()
+        var migrated: [HabitLog] = []
+
+        if !history.isEmpty {
+            for (day, values) in history {
+                guard let baseDate = date(from: day),
+                      let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: baseDate) else {
+                    continue
+                }
+                for (habitID, value) in values where value > 0 {
+                    if let uuid = UUID(uuidString: habitID) {
+                        migrated.append(HabitLog(id: UUID(), habitID: uuid, value: value, timestamp: noon))
+                    }
+                }
+            }
+        } else {
+            let todayValues = defaults.dictionary(forKey: Keys.todayValues) as? [String: Int] ?? [:]
+            for (habitID, value) in todayValues where value > 0 {
+                if let uuid = UUID(uuidString: habitID) {
+                    migrated.append(HabitLog(id: UUID(), habitID: uuid, value: value, timestamp: Date()))
+                }
+            }
+        }
+
+        saveLogs(migrated)
+    }
+
+    // MARK: - Aggregates
 
     static func loadState() -> State {
-        ensureToday()
+        migrateToLogsIfNeeded()
         let habits = loadHabits()
-        let raw = defaults.dictionary(forKey: Keys.todayValues) as? [String: Int] ?? [:]
+        let logs = loadLogs()
+        let todayKey = dayKey(for: normalizedToday())
 
-        var values: [UUID: Int] = [:]
-        for habit in habits {
-            values[habit.id] = raw[habit.id.uuidString] ?? 0
+        var totalsByDayAndHabit: [String: [UUID: Int]] = [:]
+        for log in logs {
+            let key = dayKey(for: log.timestamp)
+            var day = totalsByDayAndHabit[key] ?? [:]
+            day[log.habitID, default: 0] += max(0, log.value)
+            totalsByDayAndHabit[key] = day
         }
 
-        let streak = defaults.integer(forKey: Keys.streak)
-        return State(habits: habits, values: values, streakDays: streak)
-    }
+        var values: [UUID: Int] = [:]
+        var streaks: [UUID: Int] = [:]
+        for habit in habits {
+            values[habit.id] = totalsByDayAndHabit[todayKey]?[habit.id] ?? 0
+            streaks[habit.id] = currentStreak(for: habit.id, totalsByDayAndHabit: totalsByDayAndHabit)
+        }
 
-    static func setValue(for habit: Habit, value: Int) -> State {
-        ensureToday()
-        var dict = defaults.dictionary(forKey: Keys.todayValues) as? [String: Int] ?? [:]
-        dict[habit.id.uuidString] = max(0, value)
-        defaults.set(dict, forKey: Keys.todayValues)
-        return recomputeStreak()
+        return State(habits: habits, values: values, streaksByHabit: streaks)
     }
-
-    // MARK: - Streak recompute
 
     @discardableResult
-    private static func recomputeStreak() -> State {
-        ensureToday()
+    static func addLog(for habit: Habit, value: Int, at timestamp: Date = Date()) -> State {
+        migrateToLogsIfNeeded()
+        let sanitized = max(0, value)
+        guard sanitized > 0 else { return loadState() }
+
+        var logs = loadLogs()
+        logs.append(HabitLog(id: UUID(), habitID: habit.id, value: sanitized, timestamp: timestamp))
+        saveLogs(logs)
+
+        // Keep compatibility key synced with today's total.
+        syncLegacyTodayValuesFromLogs(logs)
+        return loadState()
+    }
+
+    @discardableResult
+    static func setValue(for habit: Habit, value: Int) -> State {
+        addLog(for: habit, value: value)
+    }
+
+    static func streak(for habit: Habit) -> Int {
+        loadState().streaksByHabit[habit.id] ?? 0
+    }
+
+    static func completedDates(for habit: Habit, in month: Date) -> [Date] {
+        let grouped = groupedValuesByDay(for: habit)
+        return grouped.compactMap { key, value in
+            guard value > 0, let day = date(from: key) else { return nil }
+            return calendar.isDate(day, equalTo: month, toGranularity: .month) ? day : nil
+        }.sorted()
+    }
+
+    static func totalCompletedDays(for habit: Habit) -> Int {
+        groupedValuesByDay(for: habit).values.filter { $0 > 0 }.count
+    }
+
+    static func totalLoggedValue(for habit: Habit) -> Int {
+        loadLogs()
+            .filter { $0.habitID == habit.id }
+            .reduce(0) { $0 + max(0, $1.value) }
+    }
+
+    static func bestStreak(for habit: Habit) -> Int {
+        let allDates = groupedValuesByDay(for: habit)
+            .compactMap { key, value -> Date? in
+                guard value > 0 else { return nil }
+                return date(from: key)
+            }
+            .sorted()
+
+        guard !allDates.isEmpty else { return 0 }
+        var best = 1
+        var current = 1
+
+        for i in 1..<allDates.count {
+            let previous = calendar.startOfDay(for: allDates[i - 1])
+            let currentDate = calendar.startOfDay(for: allDates[i])
+            let diff = calendar.dateComponents([.day], from: previous, to: currentDate).day ?? 0
+            if diff == 1 {
+                current += 1
+            } else if diff > 1 {
+                current = 1
+            }
+            best = max(best, current)
+        }
+        return best
+    }
+
+    static func logs(for habit: Habit) -> [HabitLog] {
+        loadLogs()
+            .filter { $0.habitID == habit.id }
+            .sorted { $0.timestamp > $1.timestamp }
+    }
+
+    static func canEditOrDelete(_ log: HabitLog) -> Bool {
+        let age = Date().timeIntervalSince(log.timestamp)
+        return age >= 0 && age <= 24 * 60 * 60
+    }
+
+    @discardableResult
+    static func updateLog(for habit: Habit, logID: UUID, newValue: Int) -> Bool {
+        migrateToLogsIfNeeded()
+        let sanitized = max(0, newValue)
+        guard sanitized > 0 else { return false }
+
+        var logs = loadLogs()
+        guard let index = logs.firstIndex(where: { $0.id == logID && $0.habitID == habit.id }) else {
+            return false
+        }
+        guard canEditOrDelete(logs[index]) else { return false }
+
+        logs[index].value = sanitized
+        saveLogs(logs)
+        syncLegacyTodayValuesFromLogs(logs)
+        return true
+    }
+
+    @discardableResult
+    static func deleteLog(for habit: Habit, logID: UUID) -> Bool {
+        migrateToLogsIfNeeded()
+        var logs = loadLogs()
+        guard let index = logs.firstIndex(where: { $0.id == logID && $0.habitID == habit.id }) else {
+            return false
+        }
+        guard canEditOrDelete(logs[index]) else { return false }
+
+        logs.remove(at: index)
+        saveLogs(logs)
+        syncLegacyTodayValuesFromLogs(logs)
+        return true
+    }
+
+    static func removeData(for habit: Habit) {
+        var logs = loadLogs()
+        logs.removeAll { $0.habitID == habit.id }
+        saveLogs(logs)
+        syncLegacyTodayValuesFromLogs(logs)
+        var todayValues = defaults.dictionary(forKey: Keys.todayValues) as? [String: Int] ?? [:]
+        todayValues.removeValue(forKey: habit.id.uuidString)
+        defaults.set(todayValues, forKey: Keys.todayValues)
+    }
+
+    private static func syncLegacyTodayValuesFromLogs(_ logs: [HabitLog]) {
+        let todayKey = dayKey(for: normalizedToday())
+        var totals: [String: Int] = [:]
+        for log in logs where dayKey(for: log.timestamp) == todayKey {
+            totals[log.habitID.uuidString, default: 0] += max(0, log.value)
+        }
+        defaults.set(totals, forKey: Keys.todayValues)
+    }
+
+    private static func groupedValuesByDay(for habit: Habit) -> [String: Int] {
+        var grouped: [String: Int] = [:]
+        for log in loadLogs() where log.habitID == habit.id {
+            let key = dayKey(for: log.timestamp)
+            grouped[key, default: 0] += max(0, log.value)
+        }
+        return grouped
+    }
+
+    private static func currentStreak(for habitID: UUID, totalsByDayAndHabit: [String: [UUID: Int]]) -> Int {
         let today = normalizedToday()
-        let habits = loadHabits()
-        let raw = defaults.dictionary(forKey: Keys.todayValues) as? [String: Int] ?? [:]
+        var cursor = today
+        var streak = 0
 
-        var values: [UUID: Int] = [:]
-        var allCompleted = true
+        while true {
+            let key = dayKey(for: cursor)
+            let dayValues = totalsByDayAndHabit[key] ?? [:]
+            let value = dayValues[habitID] ?? 0
 
-        for habit in habits {
-            let v = raw[habit.id.uuidString] ?? 0
-            values[habit.id] = v
-
-            switch habit.kind {
-            case .boolean:
-                if v == 0 { allCompleted = false }
-            case .count:
-                if v == 0 { allCompleted = false }
+            if value > 0 {
+                streak += 1
+            } else {
+                break
             }
+
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else {
+                break
+            }
+            cursor = previous
         }
 
-        var streak = defaults.integer(forKey: Keys.streak)
-        if allCompleted {
-            let lastSuccess = defaults.object(forKey: Keys.lastSuccessDay) as? Date
-            if lastSuccess == nil || !calendar.isDate(lastSuccess!, inSameDayAs: today) {
-                if let last = lastSuccess,
-                   let d = calendar.dateComponents([.day], from: last, to: today).day,
-                   d == 1 {
-                    streak += 1
-                } else {
-                    streak = 1
-                }
-                defaults.set(today, forKey: Keys.lastSuccessDay)
-                defaults.set(streak, forKey: Keys.streak)
-            }
-        }
-
-        return State(habits: habits, values: values, streakDays: streak)
+        return streak
     }
 }
 
@@ -221,6 +409,52 @@ final class HabitViewModel: ObservableObject {
 
     func setValue(for habit: Habit, value: Int) {
         state = HabitStorage.setValue(for: habit, value: value)
+    }
+
+    func addLog(for habit: Habit, value: Int) {
+        state = HabitStorage.addLog(for: habit, value: value)
+    }
+
+    func streak(for habit: Habit) -> Int {
+        state.streaksByHabit[habit.id] ?? 0
+    }
+
+    func completedDates(for habit: Habit, in month: Date) -> [Date] {
+        HabitStorage.completedDates(for: habit, in: month)
+    }
+
+    func totalCompletedDays(for habit: Habit) -> Int {
+        HabitStorage.totalCompletedDays(for: habit)
+    }
+
+    func totalLoggedValue(for habit: Habit) -> Int {
+        HabitStorage.totalLoggedValue(for: habit)
+    }
+
+    func bestStreak(for habit: Habit) -> Int {
+        HabitStorage.bestStreak(for: habit)
+    }
+
+    func logs(for habit: Habit) -> [HabitLog] {
+        HabitStorage.logs(for: habit)
+    }
+
+    func canEditOrDelete(_ log: HabitLog) -> Bool {
+        HabitStorage.canEditOrDelete(log)
+    }
+
+    @discardableResult
+    func updateLog(for habit: Habit, logID: UUID, newValue: Int) -> Bool {
+        let didUpdate = HabitStorage.updateLog(for: habit, logID: logID, newValue: newValue)
+        if didUpdate { refresh() }
+        return didUpdate
+    }
+
+    @discardableResult
+    func deleteLog(for habit: Habit, logID: UUID) -> Bool {
+        let didDelete = HabitStorage.deleteLog(for: habit, logID: logID)
+        if didDelete { refresh() }
+        return didDelete
     }
 
     // Backwards-compatible helpers for existing UI
@@ -249,6 +483,7 @@ final class HabitViewModel: ObservableObject {
         var list = HabitStorage.loadHabits()
         list.removeAll { $0.id == habit.id }
         HabitStorage.saveHabits(list)
+        HabitStorage.removeData(for: habit)
         refresh()
     }
 }
