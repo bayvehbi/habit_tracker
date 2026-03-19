@@ -52,7 +52,7 @@ struct HabitStatsView: View {
             } header: {
                 Text("Logs (latest first)")
             } footer: {
-                Text("Logs can only be edited or deleted within 24 hours after they are created.")
+                Text("Logs can only be edited or deleted within 12 hours after they are created.")
             }
         }
         .navigationTitle(habit.name)
@@ -103,9 +103,13 @@ struct HabitStatsView: View {
 
     private func logRow(_ log: HabitLog) -> some View {
         let canModify = viewModel.canEditOrDelete(log)
+        let isBooleanHabit: Bool = {
+            if case .boolean = habit.kind { return true }
+            return false
+        }()
         return HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("+\(log.value)")
+                Text(isBooleanHabit ? "Done" : "+\(log.value)")
                     .font(.headline)
                 Text(timeTitle(for: log.timestamp))
                     .font(.caption)
@@ -115,6 +119,7 @@ struct HabitStatsView: View {
             Spacer()
 
             if canModify {
+                if !isBooleanHabit {
                 Button {
                     editingLog = log
                     editValueText = "\(log.value)"
@@ -123,6 +128,7 @@ struct HabitStatsView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                }
 
                 Button(role: .destructive) {
                     _ = viewModel.deleteLog(for: habit, logID: log.id)
@@ -141,7 +147,15 @@ struct HabitStatsView: View {
     }
 
     private func saveEdit() {
-        guard let log = editingLog, let value = Int(editValueText), value > 0 else { return }
+        guard let log = editingLog else { return }
+        let value: Int
+        switch habit.kind {
+        case .boolean:
+            value = 1
+        case .count:
+            guard let parsed = Int(editValueText), parsed > 0 else { return }
+            value = parsed
+        }
         _ = viewModel.updateLog(for: habit, logID: log.id, newValue: value)
         WidgetCenter.shared.reloadAllTimelines()
         editingLog = nil

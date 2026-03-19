@@ -55,6 +55,7 @@ struct HabitLog: Identifiable, Codable, Equatable {
 /// Shared keys and helpers for storing habit data between the app and the widget.
 enum HabitStorage {
     static let appGroupID = "group.com.habit-track.habit-track"
+    private static let logModificationWindowSeconds: TimeInterval = 12 * 60 * 60
 
     private static var defaults: UserDefaults {
         UserDefaults(suiteName: appGroupID) ?? .standard
@@ -200,6 +201,7 @@ enum HabitStorage {
     static func loadState() -> State {
         migrateToLogsIfNeeded()
         let habits = loadHabits()
+        let habitsByID = Dictionary(uniqueKeysWithValues: habits.map { ($0.id, $0) })
         let logs = loadLogs()
         let todayKey = dayKey(for: normalizedToday())
 
@@ -207,7 +209,12 @@ enum HabitStorage {
         for log in logs {
             let key = dayKey(for: log.timestamp)
             var day = totalsByDayAndHabit[key] ?? [:]
-            day[log.habitID, default: 0] += max(0, log.value)
+            let normalized = normalizedValue(for: habitsByID[log.habitID], rawValue: log.value)
+            day[log.habitID] = mergedDayTotal(
+                current: day[log.habitID] ?? 0,
+                incoming: normalized,
+                kind: habitsByID[log.habitID]?.kind
+            )
             totalsByDayAndHabit[key] = day
         }
 
@@ -224,10 +231,15 @@ enum HabitStorage {
     @discardableResult
     static func addLog(for habit: Habit, value: Int, at timestamp: Date = Date()) -> State {
         migrateToLogsIfNeeded()
-        let sanitized = max(0, value)
+        let sanitized = normalizedValue(for: habit, rawValue: value)
         guard sanitized > 0 else { return loadState() }
+        guard canAddLog(at: timestamp) else { return loadState() }
 
         var logs = loadLogs()
+        if case .boolean = habit.kind {
+            let targetDayKey = dayKey(for: timestamp)
+            logs.removeAll { $0.habitID == habit.id && dayKey(for: $0.timestamp) == targetDayKey }
+        }
         logs.append(HabitLog(id: UUID(), habitID: habit.id, value: sanitized, timestamp: timestamp))
         saveLogs(logs)
 
@@ -258,9 +270,14 @@ enum HabitStorage {
     }
 
     static func totalLoggedValue(for habit: Habit) -> Int {
-        loadLogs()
-            .filter { $0.habitID == habit.id }
-            .reduce(0) { $0 + max(0, $1.value) }
+        switch habit.kind {
+        case .boolean:
+            return totalCompletedDays(for: habit)
+        case .count:
+            return loadLogs()
+                .filter { $0.habitID == habit.id }
+                .reduce(0) { $0 + normalizedValue(for: habit, rawValue: $1.value) }
+        }
     }
 
     static func bestStreak(for habit: Habit) -> Int {
@@ -290,20 +307,38 @@ enum HabitStorage {
     }
 
     static func logs(for habit: Habit) -> [HabitLog] {
-        loadLogs()
+        let filtered = loadLogs()
             .filter { $0.habitID == habit.id }
             .sorted { $0.timestamp > $1.timestamp }
+
+        switch habit.kind {
+        case .count:
+            return filtered
+        case .boolean:
+            var seenDays = Set<String>()
+            return filtered.filter { log in
+                let key = dayKey(for: log.timestamp)
+                guard !seenDays.contains(key) else { return false }
+                seenDays.insert(key)
+                return true
+            }
+        }
     }
 
     static func canEditOrDelete(_ log: HabitLog) -> Bool {
         let age = Date().timeIntervalSince(log.timestamp)
-        return age >= 0 && age <= 24 * 60 * 60
+        return age >= 0 && age <= logModificationWindowSeconds
+    }
+
+    static func canAddLog(at timestamp: Date) -> Bool {
+        let age = Date().timeIntervalSince(timestamp)
+        return age >= 0 && age <= logModificationWindowSeconds
     }
 
     @discardableResult
     static func updateLog(for habit: Habit, logID: UUID, newValue: Int) -> Bool {
         migrateToLogsIfNeeded()
-        let sanitized = max(0, newValue)
+        let sanitized = normalizedValue(for: habit, rawValue: newValue)
         guard sanitized > 0 else { return false }
 
         var logs = loadLogs()
@@ -346,8 +381,14 @@ enum HabitStorage {
     private static func syncLegacyTodayValuesFromLogs(_ logs: [HabitLog]) {
         let todayKey = dayKey(for: normalizedToday())
         var totals: [String: Int] = [:]
+        let habitsByID = Dictionary(uniqueKeysWithValues: loadHabits().map { ($0.id, $0) })
         for log in logs where dayKey(for: log.timestamp) == todayKey {
-            totals[log.habitID.uuidString, default: 0] += max(0, log.value)
+            let normalized = normalizedValue(for: habitsByID[log.habitID], rawValue: log.value)
+            totals[log.habitID.uuidString] = mergedDayTotal(
+                current: totals[log.habitID.uuidString] ?? 0,
+                incoming: normalized,
+                kind: habitsByID[log.habitID]?.kind
+            )
         }
         defaults.set(totals, forKey: Keys.todayValues)
     }
@@ -356,9 +397,31 @@ enum HabitStorage {
         var grouped: [String: Int] = [:]
         for log in loadLogs() where log.habitID == habit.id {
             let key = dayKey(for: log.timestamp)
-            grouped[key, default: 0] += max(0, log.value)
+            let normalized = normalizedValue(for: habit, rawValue: log.value)
+            grouped[key] = mergedDayTotal(current: grouped[key] ?? 0, incoming: normalized, kind: habit.kind)
         }
         return grouped
+    }
+
+    private static func mergedDayTotal(current: Int, incoming: Int, kind: HabitKind?) -> Int {
+        switch kind {
+        case .boolean:
+            return (current > 0 || incoming > 0) ? 1 : 0
+        case .count:
+            return current + incoming
+        case .none:
+            return current + incoming
+        }
+    }
+
+    private static func normalizedValue(for habit: Habit?, rawValue: Int) -> Int {
+        guard let habit else { return max(0, rawValue) }
+        switch habit.kind {
+        case .boolean:
+            return rawValue > 0 ? 1 : 0
+        case .count:
+            return max(0, rawValue)
+        }
     }
 
     private static func currentStreak(for habitID: UUID, totalsByDayAndHabit: [String: [UUID: Int]]) -> Int {

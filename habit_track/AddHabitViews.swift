@@ -47,14 +47,16 @@ struct AddTodayView: View {
             
             switch habit.kind {
             case .boolean:
+                let isDoneToday = todayTotal > 0
                 Button {
                     viewModel.addLog(for: habit, value: 1)
                     WidgetCenter.shared.reloadAllTimelines()
                 } label: {
-                    Label("Log done now", systemImage: "checkmark.circle.fill")
+                    Label(isDoneToday ? "Already done today" : "Log done now", systemImage: "checkmark.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(isDoneToday)
             case .count:
                 Stepper("Log amount: \(input.wrappedValue)", value: input, in: 1...10_000)
                 HStack(spacing: 8) {
