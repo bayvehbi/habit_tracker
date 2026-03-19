@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7D3377272F67FBC100DA8BED /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D3377262F67FBC100DA8BED /* WidgetKit.framework */; };
+		7D3377292F67FBC100DA8BED /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D3377282F67FBC100DA8BED /* SwiftUI.framework */; };
+		7D3377362F67FBC300DA8BED /* HabitLockscreenWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7D3377242F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		7D3377002F67F6D400DA8BED /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,17 +27,72 @@
 			remoteGlobalIDString = 7D3376EE2F67F6D200DA8BED;
 			remoteInfo = habit_track;
 		};
+		7D3377342F67FBC300DA8BED /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7D3376E72F67F6D200DA8BED /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D3377232F67FBC100DA8BED;
+			remoteInfo = HabitLockscreenWidgetExtensionExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		7D33773B2F67FBC300DA8BED /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7D3377362F67FBC300DA8BED /* HabitLockscreenWidgetExtensionExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		7D3376EF2F67F6D200DA8BED /* habit_track.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = habit_track.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D3376FF2F67F6D400DA8BED /* habit_trackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = habit_trackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D3377092F67F6D400DA8BED /* habit_trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = habit_trackUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D3377242F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HabitLockscreenWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D3377262F67FBC100DA8BED /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		7D3377282F67FBC100DA8BED /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		7D3377462F6810C900DA8BED /* HabitLockscreenWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HabitLockscreenWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		7D3377372F67FBC300DA8BED /* Exceptions for "HabitLockscreenWidgetExtension" folder in "HabitLockscreenWidgetExtensionExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7D3377232F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension */;
+		};
+		7D33773D2F67FC7900DA8BED /* Exceptions for "habit_track" folder in "HabitLockscreenWidgetExtensionExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				HabitLockscreenWidget.swift,
+				HabitStorage.swift,
+				HabitWidgetEntity.swift,
+			);
+			target = 7D3377232F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension */;
+		};
+		7D3377402F67FD2100DA8BED /* Exceptions for "HabitLockscreenWidgetExtension" folder in "habit_track" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				HabitLockscreenWidgetExtension.swift,
+			);
+			target = 7D3376EE2F67F6D200DA8BED /* habit_track */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7D3376F12F67F6D200DA8BED /* habit_track */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7D33773D2F67FC7900DA8BED /* Exceptions for "habit_track" folder in "HabitLockscreenWidgetExtensionExtension" target */,
+			);
 			path = habit_track;
 			sourceTree = "<group>";
 		};
@@ -43,6 +104,15 @@
 		7D33770C2F67F6D400DA8BED /* habit_trackUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = habit_trackUITests;
+			sourceTree = "<group>";
+		};
+		7D33772A2F67FBC100DA8BED /* HabitLockscreenWidgetExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7D3377402F67FD2100DA8BED /* Exceptions for "HabitLockscreenWidgetExtension" folder in "habit_track" target */,
+				7D3377372F67FBC300DA8BED /* Exceptions for "HabitLockscreenWidgetExtension" folder in "HabitLockscreenWidgetExtensionExtension" target */,
+			);
+			path = HabitLockscreenWidgetExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,15 +139,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7D3377212F67FBC100DA8BED /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D3377292F67FBC100DA8BED /* SwiftUI.framework in Frameworks */,
+				7D3377272F67FBC100DA8BED /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		7D3376E62F67F6D200DA8BED = {
 			isa = PBXGroup;
 			children = (
+				7D3377462F6810C900DA8BED /* HabitLockscreenWidgetExtensionExtension.entitlements */,
 				7D3376F12F67F6D200DA8BED /* habit_track */,
 				7D3377022F67F6D400DA8BED /* habit_trackTests */,
 				7D33770C2F67F6D400DA8BED /* habit_trackUITests */,
+				7D33772A2F67FBC100DA8BED /* HabitLockscreenWidgetExtension */,
+				7D3377252F67FBC100DA8BED /* Frameworks */,
 				7D3376F02F67F6D200DA8BED /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,8 +170,18 @@
 				7D3376EF2F67F6D200DA8BED /* habit_track.app */,
 				7D3376FF2F67F6D400DA8BED /* habit_trackTests.xctest */,
 				7D3377092F67F6D400DA8BED /* habit_trackUITests.xctest */,
+				7D3377242F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		7D3377252F67FBC100DA8BED /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7D3377262F67FBC100DA8BED /* WidgetKit.framework */,
+				7D3377282F67FBC100DA8BED /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -102,10 +194,12 @@
 				7D3376EB2F67F6D200DA8BED /* Sources */,
 				7D3376EC2F67F6D200DA8BED /* Frameworks */,
 				7D3376ED2F67F6D200DA8BED /* Resources */,
+				7D33773B2F67FBC300DA8BED /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7D3377352F67FBC300DA8BED /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				7D3376F12F67F6D200DA8BED /* habit_track */,
@@ -163,6 +257,28 @@
 			productReference = 7D3377092F67F6D400DA8BED /* habit_trackUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		7D3377232F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D3377382F67FBC300DA8BED /* Build configuration list for PBXNativeTarget "HabitLockscreenWidgetExtensionExtension" */;
+			buildPhases = (
+				7D3377202F67FBC100DA8BED /* Sources */,
+				7D3377212F67FBC100DA8BED /* Frameworks */,
+				7D3377222F67FBC100DA8BED /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				7D33772A2F67FBC100DA8BED /* HabitLockscreenWidgetExtension */,
+			);
+			name = HabitLockscreenWidgetExtensionExtension;
+			packageProductDependencies = (
+			);
+			productName = HabitLockscreenWidgetExtensionExtension;
+			productReference = 7D3377242F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +300,9 @@
 						CreatedOnToolsVersion = 16.1;
 						TestTargetID = 7D3376EE2F67F6D200DA8BED;
 					};
+					7D3377232F67FBC100DA8BED = {
+						CreatedOnToolsVersion = 16.1;
+					};
 				};
 			};
 			buildConfigurationList = 7D3376EA2F67F6D200DA8BED /* Build configuration list for PBXProject "habit_track" */;
@@ -203,6 +322,7 @@
 				7D3376EE2F67F6D200DA8BED /* habit_track */,
 				7D3376FE2F67F6D400DA8BED /* habit_trackTests */,
 				7D3377082F67F6D400DA8BED /* habit_trackUITests */,
+				7D3377232F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -223,6 +343,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7D3377072F67F6D400DA8BED /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D3377222F67FBC100DA8BED /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -253,6 +380,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7D3377202F67FBC100DA8BED /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +399,11 @@
 			isa = PBXTargetDependency;
 			target = 7D3376EE2F67F6D200DA8BED /* habit_track */;
 			targetProxy = 7D33770A2F67F6D400DA8BED /* PBXContainerItemProxy */;
+		};
+		7D3377352F67FBC300DA8BED /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D3377232F67FBC100DA8BED /* HabitLockscreenWidgetExtensionExtension */;
+			targetProxy = 7D3377342F67FBC300DA8BED /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -393,11 +532,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = habit_track/habit_track.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"habit_track/Preview Content\"";
+				DEVELOPMENT_TEAM = H8R3Q672P3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "habit-track-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -421,11 +563,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = habit_track/habit_track.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"habit_track/Preview Content\"";
+				DEVELOPMENT_TEAM = H8R3Q672P3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "habit-track-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -450,6 +595,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8R3Q672P3;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
 				MARKETING_VERSION = 1.0;
@@ -468,6 +614,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8R3Q672P3;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
 				MARKETING_VERSION = 1.0;
@@ -485,6 +632,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8R3Q672P3;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.habit-track.habit-trackUITests";
@@ -501,6 +649,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8R3Q672P3;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.habit-track.habit-trackUITests";
@@ -509,6 +658,64 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = habit_track;
+			};
+			name = Release;
+		};
+		7D3377392F67FBC300DA8BED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = HabitLockscreenWidgetExtensionExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8R3Q672P3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HabitLockscreenWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HabitLockscreenWidgetExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.habit-track.habit-track.HabitLockscreenWidgetExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7D33773A2F67FBC300DA8BED /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = HabitLockscreenWidgetExtensionExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8R3Q672P3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HabitLockscreenWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HabitLockscreenWidgetExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.habit-track.habit-track.HabitLockscreenWidgetExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -547,6 +754,15 @@
 			buildConfigurations = (
 				7D33771A2F67F6D400DA8BED /* Debug */,
 				7D33771B2F67F6D400DA8BED /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7D3377382F67FBC300DA8BED /* Build configuration list for PBXNativeTarget "HabitLockscreenWidgetExtensionExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D3377392F67FBC300DA8BED /* Debug */,
+				7D33773A2F67FBC300DA8BED /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
