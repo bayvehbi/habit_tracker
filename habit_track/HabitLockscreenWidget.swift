@@ -78,27 +78,28 @@ struct GenericHabitView: View {
         let value = entry.state.values[habit.id] ?? 0
         let isDone = value > 0
         let streak = entry.state.streaksByHabit[habit.id] ?? 0
+        let streakText: String = {
+            switch habit.kind {
+            case .boolean:
+                return "\(streak)"
+            case .count:
+                return "\(streak) / \(value)"
+            }
+        }()
         
         return HStack(spacing: 8) {
             // Left: habit icon
             Image(systemName: habit.symbolName)
                 .font(.system(size: 18, weight: .semibold))
             
-            // Middle: state-dependent information
-            VStack(alignment: .leading, spacing: 2) {
-                if isDone {
-                    Text("\(value)")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                }
-
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: starSize(for: streak), weight: .bold))
-                    Text("\(streak)")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                }
-                .lineLimit(1)
+            // Middle: single-line streak text
+            HStack(spacing: 4) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: starSize(for: streak), weight: .bold))
+                Text(streakText)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
             }
+            .lineLimit(1)
             
             Spacer(minLength: 0)
             
